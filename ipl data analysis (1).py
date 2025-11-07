@@ -230,7 +230,13 @@ def data_analysis_menu():
             ("17", "📊 MATCHES WON BY EACH TEAM", Fore.BLUE),
             ("18", "🪙 TOSS WINS BY EACH TEAM", Fore.BLUE),
             ("19", "📈 DATA SUMMARY", Fore.CYAN),
-            ("20", "🚪 EXIT (To Main Menu)", Fore.RED),
+            ("20", "🔍 SEARCH MATCHES", Fore.MAGENTA),
+            ("21", "⚔️  HEAD-TO-HEAD TEAM COMPARISON", Fore.YELLOW),
+            ("22", "👤 PLAYER STATISTICS", Fore.CYAN),
+            ("23", "🏟️  VENUE STATISTICS", Fore.BLUE),
+            ("24", "💾 EXPORT DATA TO CSV", Fore.GREEN),
+            ("25", "📊 ADVANCED STATISTICS", Fore.MAGENTA),
+            ("26", "🚪 EXIT (To Main Menu)", Fore.RED),
         ]
         
         for num, item, color in menu_items:
@@ -240,7 +246,7 @@ def data_analysis_menu():
         print_separator()
         
         try:
-            choice = int(input(f"{Fore.YELLOW}{Style.BRIGHT}Enter Choice (1-20): {Style.RESET_ALL}"))
+            choice = int(input(f"{Fore.YELLOW}{Style.BRIGHT}Enter Choice (1-26): {Style.RESET_ALL}"))
         except ValueError:
             print_error("INVALID CHOICE - Please enter a number")
             input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
@@ -599,6 +605,383 @@ def data_analysis_menu():
             input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
                 
         elif choice == 20:
+            # Search matches
+            print_header("SEARCH MATCHES", 80)
+            print()
+            print_colored("Search Options:", Fore.YELLOW, Style.BRIGHT)
+            print_colored("1. Search by Team", Fore.CYAN)
+            print_colored("2. Search by Player", Fore.CYAN)
+            print_colored("3. Search by Venue", Fore.CYAN)
+            print_colored("4. Search by Season", Fore.CYAN)
+            print()
+            search_choice = input(f'{Fore.CYAN}Enter search option (1-4): {Style.RESET_ALL}')
+            
+            if search_choice == '1':
+                team_name = input(f'{Fore.CYAN}Enter Team Name: {Style.RESET_ALL}')
+                results = df[(df['team1'] == team_name) | (df['team2'] == team_name) | (df['winner'] == team_name)]
+                print()
+                print_header(f"MATCHES FOR {team_name.upper()}", 80)
+                print()
+                if len(results) > 0:
+                    print(results[['season', 'date', 'team1', 'team2', 'winner', 'venue']].to_string())
+                    print()
+                    print_success(f"Total Matches: {len(results)}")
+                else:
+                    print_warning(f"No matches found for {team_name}")
+                    
+            elif search_choice == '2':
+                player_name = input(f'{Fore.CYAN}Enter Player Name: {Style.RESET_ALL}')
+                results = df[df['player_of_match'].str.contains(player_name, case=False, na=False)]
+                print()
+                print_header(f"MATCHES - {player_name.upper()} AS PLAYER OF MATCH", 80)
+                print()
+                if len(results) > 0:
+                    print(results[['season', 'date', 'team1', 'team2', 'winner', 'player_of_match']].to_string())
+                    print()
+                    print_success(f"Total Matches: {len(results)}")
+                else:
+                    print_warning(f"No matches found for {player_name}")
+                    
+            elif search_choice == '3':
+                venue_name = input(f'{Fore.CYAN}Enter Venue Name: {Style.RESET_ALL}')
+                results = df[df['venue'].str.contains(venue_name, case=False, na=False)]
+                print()
+                print_header(f"MATCHES AT {venue_name.upper()}", 80)
+                print()
+                if len(results) > 0:
+                    print(results[['season', 'date', 'team1', 'team2', 'winner', 'venue']].to_string())
+                    print()
+                    print_success(f"Total Matches: {len(results)}")
+                else:
+                    print_warning(f"No matches found at {venue_name}")
+                    
+            elif search_choice == '4':
+                try:
+                    season = int(input(f'{Fore.CYAN}Enter Season (2008-2019): {Style.RESET_ALL}'))
+                    results = df[df['season'] == season]
+                    print()
+                    print_header(f"MATCHES IN SEASON {season}", 80)
+                    print()
+                    if len(results) > 0:
+                        print(results[['date', 'team1', 'team2', 'winner', 'venue', 'player_of_match']].to_string())
+                        print()
+                        print_success(f"Total Matches: {len(results)}")
+                    else:
+                        print_warning(f"No matches found for season {season}")
+                except ValueError:
+                    print_error("Invalid input! Please enter a number.")
+            else:
+                print_error("Invalid search option!")
+            input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
+
+        elif choice == 21:
+            # Head-to-head team comparison
+            print_header("HEAD-TO-HEAD TEAM COMPARISON", 80)
+            print()
+            team1 = input(f'{Fore.CYAN}Enter First Team Name: {Style.RESET_ALL}')
+            team2 = input(f'{Fore.CYAN}Enter Second Team Name: {Style.RESET_ALL}')
+            
+            # Find matches between these two teams
+            h2h = df[((df['team1'] == team1) & (df['team2'] == team2)) | 
+                    ((df['team1'] == team2) & (df['team2'] == team1))]
+            
+            if len(h2h) > 0:
+                team1_wins = len(h2h[h2h['winner'] == team1])
+                team2_wins = len(h2h[h2h['winner'] == team2])
+                no_result = len(h2h) - team1_wins - team2_wins
+                
+                print()
+                print_header(f"{team1.upper()} vs {team2.upper()}", 80)
+                print()
+                print_colored(f"Total Matches: {len(h2h)}", Fore.YELLOW, Style.BRIGHT)
+                print_colored(f"{team1} Wins: {team1_wins}", Fore.GREEN, Style.BRIGHT)
+                print_colored(f"{team2} Wins: {team2_wins}", Fore.GREEN, Style.BRIGHT)
+                if no_result > 0:
+                    print_colored(f"No Result/Tie: {no_result}", Fore.YELLOW, Style.BRIGHT)
+                print()
+                print_colored("Recent Matches:", Fore.CYAN, Style.BRIGHT)
+                print(h2h[['season', 'date', 'team1', 'team2', 'winner', 'venue']].tail(10).to_string())
+            else:
+                print_warning(f"No matches found between {team1} and {team2}")
+            input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
+
+        elif choice == 22:
+            # Player statistics
+            print_header("PLAYER STATISTICS", 80)
+            print()
+            player_name = input(f'{Fore.CYAN}Enter Player Name: {Style.RESET_ALL}')
+            player_matches = df[df['player_of_match'].str.contains(player_name, case=False, na=False)]
+            
+            if len(player_matches) > 0:
+                print()
+                print_header(f"{player_name.upper()} STATISTICS", 80)
+                print()
+                print_colored(f"Total Player of Match Awards: {len(player_matches)}", Fore.GREEN, Style.BRIGHT)
+                print()
+                
+                # Awards by season
+                awards_by_season = player_matches['season'].value_counts().sort_index()
+                print_colored("Awards by Season:", Fore.YELLOW, Style.BRIGHT)
+                for season, count in awards_by_season.items():
+                    print_colored(f"  {season}: {count} award(s)", Fore.CYAN)
+                print()
+                
+                # Teams played for
+                teams = set()
+                for _, match in player_matches.iterrows():
+                    if player_name.lower() in match.get('team1', '').lower():
+                        teams.add(match['team1'])
+                    if player_name.lower() in match.get('team2', '').lower():
+                        teams.add(match['team2'])
+                
+                if teams:
+                    print_colored(f"Teams: {', '.join(teams)}", Fore.CYAN)
+                print()
+                print_colored("Recent Awards:", Fore.YELLOW, Style.BRIGHT)
+                print(player_matches[['season', 'date', 'team1', 'team2', 'winner', 'venue']].tail(10).to_string())
+            else:
+                print_warning(f"No statistics found for {player_name}")
+            input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
+
+        elif choice == 23:
+            # Venue statistics
+            print_header("VENUE STATISTICS", 80)
+            print()
+            venue_name = input(f'{Fore.CYAN}Enter Venue Name (or press Enter for all venues): {Style.RESET_ALL}')
+            
+            if venue_name.strip():
+                venue_matches = df[df['venue'].str.contains(venue_name, case=False, na=False)]
+                if len(venue_matches) > 0:
+                    print()
+                    print_header(f"STATISTICS FOR {venue_name.upper()}", 80)
+                    print()
+                    print_colored(f"Total Matches: {len(venue_matches)}", Fore.GREEN, Style.BRIGHT)
+                    print()
+                    
+                    # Most successful team at this venue
+                    winners = venue_matches['winner'].value_counts()
+                    print_colored("Most Successful Teams:", Fore.YELLOW, Style.BRIGHT)
+                    for team, wins in winners.head(5).items():
+                        print_colored(f"  {team}: {wins} wins", Fore.CYAN)
+                    print()
+                    
+                    # Matches by season
+                    season_counts = venue_matches['season'].value_counts().sort_index()
+                    print_colored("Matches by Season:", Fore.YELLOW, Style.BRIGHT)
+                    for season, count in season_counts.items():
+                        print_colored(f"  {season}: {count} match(es)", Fore.CYAN)
+                else:
+                    print_warning(f"No matches found at {venue_name}")
+            else:
+                # Show all venues
+                venue_stats = df.groupby('venue').agg({
+                    'id': 'count',
+                    'winner': lambda x: x.value_counts().index[0] if len(x) > 0 else 'N/A'
+                }).rename(columns={'id': 'Total Matches', 'winner': 'Most Successful Team'})
+                venue_stats = venue_stats.sort_values('Total Matches', ascending=False)
+                print()
+                print_header("ALL VENUES STATISTICS", 80)
+                print()
+                print(venue_stats.to_string())
+            input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
+
+        elif choice == 24:
+            # Export data
+            print_header("EXPORT DATA TO CSV", 80)
+            print()
+            print_colored("Export Options:", Fore.YELLOW, Style.BRIGHT)
+            print_colored("1. Export All Data", Fore.CYAN)
+            print_colored("2. Export Filtered Data by Season", Fore.CYAN)
+            print_colored("3. Export Filtered Data by Team", Fore.CYAN)
+            print()
+            export_choice = input(f'{Fore.CYAN}Enter option (1-3): {Style.RESET_ALL}')
+            
+            try:
+                if export_choice == '1':
+                    filename = input(f'{Fore.CYAN}Enter filename (without .csv): {Style.RESET_ALL}')
+                    if not filename:
+                        filename = 'ipl_export'
+                    df.to_csv(f'{filename}.csv', index=False)
+                    print_success(f"Data exported to {filename}.csv")
+                    
+                elif export_choice == '2':
+                    year = int(input(f'{Fore.CYAN}Enter Season (2008-2019): {Style.RESET_ALL}'))
+                    if validate_year(year):
+                        filtered_df = df[df['season'] == year]
+                        filename = input(f'{Fore.CYAN}Enter filename (without .csv): {Style.RESET_ALL}')
+                        if not filename:
+                            filename = f'ipl_season_{year}'
+                        filtered_df.to_csv(f'{filename}.csv', index=False)
+                        print_success(f"Season {year} data exported to {filename}.csv ({len(filtered_df)} records)")
+                    else:
+                        print_error("Invalid year!")
+                        
+                elif export_choice == '3':
+                    team_name = input(f'{Fore.CYAN}Enter Team Name: {Style.RESET_ALL}')
+                    filtered_df = df[(df['team1'] == team_name) | (df['team2'] == team_name) | (df['winner'] == team_name)]
+                    if len(filtered_df) > 0:
+                        filename = input(f'{Fore.CYAN}Enter filename (without .csv): {Style.RESET_ALL}')
+                        if not filename:
+                            filename = f'ipl_team_{team_name.replace(" ", "_")}'
+                        filtered_df.to_csv(f'{filename}.csv', index=False)
+                        print_success(f"Team {team_name} data exported to {filename}.csv ({len(filtered_df)} records)")
+                    else:
+                        print_warning(f"No data found for {team_name}")
+                else:
+                    print_error("Invalid option!")
+            except Exception as e:
+                print_error(f"Error exporting data: {e}")
+            input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
+
+        elif choice == 25:
+            # Advanced statistics
+            print_header("ADVANCED STATISTICS", 80)
+            print()
+            print_colored("Advanced Statistics Options:", Fore.YELLOW, Style.BRIGHT)
+            print_colored("1. Win Percentage by Team", Fore.CYAN)
+            print_colored("2. Home vs Away Performance", Fore.CYAN)
+            print_colored("3. Toss Win vs Match Win Analysis", Fore.CYAN)
+            print_colored("4. Most Consistent Teams", Fore.CYAN)
+            print_colored("5. Season-wise Team Performance", Fore.CYAN)
+            print()
+            stat_choice = input(f'{Fore.CYAN}Enter option (1-5): {Style.RESET_ALL}')
+            
+            if stat_choice == '1':
+                # Win percentage
+                print()
+                print_header("WIN PERCENTAGE BY TEAM", 80)
+                print()
+                all_teams = set(df['team1'].unique()) | set(df['team2'].unique())
+                win_stats = []
+                
+                for team in sorted(all_teams):
+                    team_matches = df[(df['team1'] == team) | (df['team2'] == team)]
+                    wins = len(team_matches[team_matches['winner'] == team])
+                    total = len(team_matches)
+                    if total > 0:
+                        win_pct = (wins / total) * 100
+                        win_stats.append({
+                            'Team': team,
+                            'Matches': total,
+                            'Wins': wins,
+                            'Losses': total - wins,
+                            'Win %': f"{win_pct:.2f}%"
+                        })
+                
+                win_df = pd.DataFrame(win_stats).sort_values('Win %', ascending=False)
+                print(win_df.to_string(index=False))
+                
+            elif stat_choice == '2':
+                # Home vs Away (using venue city correlation)
+                print()
+                print_header("HOME PERFORMANCE ANALYSIS", 80)
+                print()
+                print_info("Note: Home team is determined by venue city correlation")
+                team_name = input(f'{Fore.CYAN}Enter Team Name: {Style.RESET_ALL}')
+                team_matches = df[(df['team1'] == team_name) | (df['team2'] == team_name)]
+                
+                if len(team_matches) > 0:
+                    # Simple analysis: matches where team won
+                    wins = len(team_matches[team_matches['winner'] == team_name])
+                    print_colored(f"Total Matches: {len(team_matches)}", Fore.GREEN, Style.BRIGHT)
+                    print_colored(f"Total Wins: {wins}", Fore.GREEN, Style.BRIGHT)
+                    print_colored(f"Win Percentage: {(wins/len(team_matches)*100):.2f}%", Fore.GREEN, Style.BRIGHT)
+                else:
+                    print_warning(f"No data found for {team_name}")
+                    
+            elif stat_choice == '3':
+                # Toss win vs match win
+                print()
+                print_header("TOSS WIN vs MATCH WIN ANALYSIS", 80)
+                print()
+                toss_winners = df[df['toss_winner'].notna()]
+                toss_and_match_wins = len(toss_winners[toss_winners['toss_winner'] == toss_winners['winner']])
+                total_toss_wins = len(toss_winners)
+                
+                print_colored(f"Total Matches with Toss Data: {total_toss_wins}", Fore.YELLOW, Style.BRIGHT)
+                print_colored(f"Matches won by Toss Winner: {toss_and_match_wins}", Fore.GREEN, Style.BRIGHT)
+                print_colored(f"Win Rate after Toss Win: {(toss_and_match_wins/total_toss_wins*100):.2f}%", Fore.GREEN, Style.BRIGHT)
+                print()
+                
+                # By team
+                team_toss_analysis = {}
+                for team in df['toss_winner'].unique():
+                    if pd.notna(team):
+                        team_toss_wins = df[df['toss_winner'] == team]
+                        match_wins_after_toss = len(team_toss_wins[team_toss_wins['winner'] == team])
+                        if len(team_toss_wins) > 10:  # Only teams with significant data
+                            team_toss_analysis[team] = {
+                                'Toss Wins': len(team_toss_wins),
+                                'Match Wins After Toss': match_wins_after_toss,
+                                'Win %': f"{(match_wins_after_toss/len(team_toss_wins)*100):.2f}%"
+                            }
+                
+                if team_toss_analysis:
+                    print_colored("Team-wise Toss Win Analysis:", Fore.YELLOW, Style.BRIGHT)
+                    toss_df = pd.DataFrame(team_toss_analysis).T.sort_values('Win %', ascending=False)
+                    print(toss_df.to_string())
+                    
+            elif stat_choice == '4':
+                # Most consistent teams (low variance in performance)
+                print()
+                print_header("MOST CONSISTENT TEAMS", 80)
+                print()
+                all_teams = set(df['team1'].unique()) | set(df['team2'].unique())
+                consistency_stats = []
+                
+                for team in sorted(all_teams):
+                    team_seasons = df[((df['team1'] == team) | (df['team2'] == team)) & 
+                                     (df['season'].notna())]
+                    if len(team_seasons) > 20:  # Only teams with significant matches
+                        wins_by_season = team_seasons[team_seasons['winner'] == team].groupby('season').size()
+                        if len(wins_by_season) > 2:
+                            avg_wins = wins_by_season.mean()
+                            std_wins = wins_by_season.std()
+                            consistency_stats.append({
+                                'Team': team,
+                                'Avg Wins/Season': f"{avg_wins:.2f}",
+                                'Std Deviation': f"{std_wins:.2f}",
+                                'Consistency Score': f"{(avg_wins/(std_wins+0.1)):.2f}" if std_wins > 0 else "N/A"
+                            })
+                
+                if consistency_stats:
+                    cons_df = pd.DataFrame(consistency_stats).sort_values('Consistency Score', ascending=False, na_position='last')
+                    print(cons_df.to_string(index=False))
+                else:
+                    print_warning("Insufficient data for consistency analysis")
+                    
+            elif stat_choice == '5':
+                # Season-wise team performance
+                print()
+                print_header("SEASON-WISE TEAM PERFORMANCE", 80)
+                print()
+                team_name = input(f'{Fore.CYAN}Enter Team Name: {Style.RESET_ALL}')
+                team_matches = df[((df['team1'] == team_name) | (df['team2'] == team_name))]
+                
+                if len(team_matches) > 0:
+                    season_performance = []
+                    for season in sorted(team_matches['season'].unique()):
+                        season_matches = team_matches[team_matches['season'] == season]
+                        wins = len(season_matches[season_matches['winner'] == team_name])
+                        total = len(season_matches)
+                        season_performance.append({
+                            'Season': int(season),
+                            'Matches': total,
+                            'Wins': wins,
+                            'Win %': f"{(wins/total*100):.2f}%"
+                        })
+                    
+                    perf_df = pd.DataFrame(season_performance)
+                    print()
+                    print_colored(f"Performance of {team_name}:", Fore.YELLOW, Style.BRIGHT)
+                    print(perf_df.to_string(index=False))
+                else:
+                    print_warning(f"No data found for {team_name}")
+            else:
+                print_error("Invalid option!")
+            input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
+
+        elif choice == 26:
             break
         else:
             print_error("INVALID CHOICE")
@@ -611,7 +994,6 @@ def graph():
         print_info("Loading data for visualization...")
         ipl = pd.read_csv(csv_file, sep=",", header=0)
         df = clean_dataframe(pd.DataFrame(ipl))
-        df = clean_dataframe(df)
         # Convert numeric columns to proper types
         numeric_cols = ['season', 'win_by_runs', 'win_by_wickets', 'dl_applied']
         for col in numeric_cols:
@@ -917,7 +1299,8 @@ def main_menu():
             ("1", "📂 Read CSV File", Fore.CYAN),
             ("2", "📊 Data Analysis Menu", Fore.GREEN),
             ("3", "📈 Graph Visualization Menu", Fore.YELLOW),
-            ("4", "🚪 Exit Program", Fore.RED),
+            ("4", "ℹ️  About Program", Fore.BLUE),
+            ("5", "🚪 Exit Program", Fore.RED),
         ]
         
         for num, item, color in main_options:
@@ -928,7 +1311,7 @@ def main_menu():
         print()
         
         try:
-            a = int(input(f'{Fore.YELLOW}{Style.BRIGHT}Enter your choice (1-4): {Style.RESET_ALL}'))
+            a = int(input(f'{Fore.YELLOW}{Style.BRIGHT}Enter your choice (1-5): {Style.RESET_ALL}'))
         except ValueError:
             print_error("Invalid input! Please enter a number.")
             input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
@@ -945,6 +1328,41 @@ def main_menu():
             graph()
 
         elif a == 4:
+            clear()
+            print_header("ABOUT THE PROGRAM", 80)
+            print()
+            about_text = f"""
+    {Fore.CYAN}IPL Data Analysis Program{Style.RESET_ALL}
+    
+    {Fore.YELLOW}Features:{Style.RESET_ALL}
+    • Comprehensive data analysis with 26+ analysis options
+    • Interactive data visualization with 16 graph types
+    • Advanced statistics and insights
+    • Search and filter functionality
+    • Team comparison and head-to-head records
+    • Player statistics and performance analysis
+    • Venue analysis and statistics
+    • Data export capabilities
+    • Beautiful color-coded interface
+    
+    {Fore.YELLOW}Data Source:{Style.RESET_ALL}
+    • IPL Matches: 2008-2019
+    • Comprehensive match statistics
+    • Team, player, and venue data
+    
+    {Fore.YELLOW}Technologies Used:{Style.RESET_ALL}
+    • Python 3
+    • Pandas (Data Analysis)
+    • Matplotlib (Visualization)
+    • NumPy (Numerical Operations)
+    
+    {Fore.GREEN}Version: 2.0{Style.RESET_ALL}
+    {Fore.GREEN}Last Updated: 2024{Style.RESET_ALL}
+            """
+            print(about_text)
+            input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
+
+        elif a == 5:
             clear()
             print_header("THANK YOU FOR USING IPL DATA ANALYSIS", 80)
             print()
