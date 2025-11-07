@@ -1,483 +1,743 @@
-
-#ipl data analysis program
+# IPL Data Analysis Program - Enhanced Version
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-csv_file='matchanalysis.csv'
+import os
+import sys
+from datetime import datetime
+
+# Try to import colorama for colors, if not available, use ANSI codes
+try:
+    from colorama import init, Fore, Back, Style
+    init(autoreset=True)
+    HAS_COLORAMA = True
+except ImportError:
+    # ANSI color codes for Windows
+    class Fore:
+        BLACK = '\033[30m'
+        RED = '\033[31m'
+        GREEN = '\033[32m'
+        YELLOW = '\033[33m'
+        BLUE = '\033[34m'
+        MAGENTA = '\033[35m'
+        CYAN = '\033[36m'
+        WHITE = '\033[37m'
+        RESET = '\033[0m'
+    class Style:
+        BRIGHT = '\033[1m'
+        DIM = '\033[2m'
+        RESET_ALL = '\033[0m'
+    HAS_COLORAMA = False
+
+csv_file = 'matchanalysis.csv'
+
+# Color functions for easy use
+def print_colored(text, color=Fore.WHITE, style=Style.RESET_ALL):
+    """Print colored text"""
+    print(f"{color}{style}{text}{Style.RESET_ALL}")
+
+def print_header(text, width=80):
+    """Print a formatted header"""
+    border = "═" * width
+    print_colored(border, Fore.CYAN, Style.BRIGHT)
+    print_colored(f"{text:^{width}}", Fore.YELLOW, Style.BRIGHT)
+    print_colored(border, Fore.CYAN, Style.BRIGHT)
+
+def print_box(text, color=Fore.CYAN):
+    """Print text in a box"""
+    lines = text.split('\n')
+    max_len = max(len(line) for line in lines) if lines else 0
+    border = "═" * (max_len + 4)
+    print_colored(f"╔{border}╗", color)
+    for line in lines:
+        print_colored(f"║  {line:<{max_len}}  ║", color)
+    print_colored(f"╚{border}╝", color)
+
+def print_separator(char="─", length=80):
+    """Print a separator line"""
+    print_colored(char * length, Fore.CYAN)
+
+def print_success(text):
+    """Print success message"""
+    print_colored(f"✓ {text}", Fore.GREEN, Style.BRIGHT)
+
+def print_error(text):
+    """Print error message"""
+    print_colored(f"✗ {text}", Fore.RED, Style.BRIGHT)
+
+def print_info(text):
+    """Print info message"""
+    print_colored(f"ℹ {text}", Fore.BLUE, Style.BRIGHT)
+
+def print_warning(text):
+    """Print warning message"""
+    print_colored(f"⚠ {text}", Fore.YELLOW, Style.BRIGHT)
 
 def introduction():
-    print("\n\n\t\t\t\t\t\t\t-:-:-:-:-:-:-:-:-:-:-:WELCOME TO MY PROGRAM :-:-:-:-:-:-:-:-:-:-:-\t\t\t\t\t\t\t\n\n")
-    print("\t\t\t\t\t\t\t-:-:-:-:-:-:-:-:-:-:-:(IPL DATA ANALYSIS):-:-:-:-:-:-:-:-:-:-:-\t\t\t\t\t\t\t\n\n")
-    msg = '''
-        Cricket is one of the most popular game in INDIA. 
-	The Indian Premier League (IPL) is a professional Twenty20 cricket league. 
-        It is the most-attended cricket league
-        In this project we will analyse the dataset of IPL matches played during (2008-2019) 
-	using Python Pandas and matplotlib python module for visualization of this dataset. \n\n\n\n'''
-
-    print(msg, end='')
-    wait = input('\t\t\t\t\tPress Enter to continue.....')
-
+    """Display welcome introduction"""
+    os.system('cls' if os.name == 'nt' else 'clear')
+    
+    # ASCII Art Title
+    title = """
+    ╔══════════════════════════════════════════════════════════════════╗
+    ║                                                                  ║
+    ║     ██╗██╗██████╗      █████╗ ████████╗ █████╗ ███╗   ██╗      ║
+    ║     ██║██║██╔══██╗    ██╔══██╗╚══██╔══╝██╔══██╗████╗  ██║      ║
+    ║     ██║██║██████╔╝    ███████║   ██║   ███████║██╔██║ ██╔██╗     ║
+    ║     ██║██║██╔═══╝     ██╔══██║   ██║   ██╔══██║██║╚██╗██║╚██╗    ║
+    ║     ██║██║██║         ██║  ██║   ██║   ██║  ██║██║ ╚████║ ╚████╗ ║
+    ║     ╚═╝╚═╝╚═╝         ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═══╝  ╚═══╝ ║
+    ║                                                                  ║
+    ║              📊 DATA ANALYSIS & VISUALIZATION SYSTEM 📊          ║
+    ║                                                                  ║
+    ╚══════════════════════════════════════════════════════════════════╝
+    """
+    print_colored(title, Fore.CYAN, Style.BRIGHT)
+    
+    print_header("WELCOME TO IPL DATA ANALYSIS PROGRAM", 80)
+    print()
+    
+    msg = f"""
+    {Fore.YELLOW}🏏 Cricket is one of the most popular games in INDIA! 🏏{Style.RESET_ALL}
+    
+    {Fore.WHITE}The Indian Premier League (IPL) is a professional Twenty20 cricket league.
+    It is the most-attended cricket league in the world!
+    
+    {Fore.CYAN}📈 In this project, we will analyze the dataset of IPL matches 
+    played during 2008-2019 using Python Pandas and Matplotlib for 
+    data visualization.{Style.RESET_ALL}
+    
+    {Fore.GREEN}✨ Features: ✨{Style.RESET_ALL}
+    • Comprehensive data analysis
+    • Interactive data visualization
+    • Statistical insights
+    • Beautiful graphs and charts
+    """
+    
+    print(msg)
+    print_separator("═", 80)
+    input(f'\n{Fore.YELLOW}{Style.BRIGHT}Press Enter to continue...{Style.RESET_ALL}')
 
 def made_by():
-    msg = ''' 
-            IPL Data Analysis made by       : Ishan Bansal & Utkarsh Jain
-            Roll No                         : 13 & 52
-            School Name                     : St. Anselm's Pink City School
-            session                         : 2021-22
-                        
-            \n\n\n
-        '''
-
-
-    print(msg, end='')
-
-    wait = input('\t\t\t\tPress Enter to continue.....')
-
+    """Display credits"""
+    os.system('cls' if os.name == 'nt' else 'clear')
+    print_header("PROJECT CREDITS", 80)
+    print()
+    
+    credits = f"""
+    {Fore.CYAN}╔══════════════════════════════════════════════════════════════╗{Style.RESET_ALL}
+    {Fore.CYAN}║{Style.RESET_ALL}                                                              {Fore.CYAN}║{Style.RESET_ALL}
+    {Fore.CYAN}║{Style.RESET_ALL}  {Fore.YELLOW}📝 IPL Data Analysis made by:{Style.RESET_ALL}                              {Fore.CYAN}║{Style.RESET_ALL}
+    {Fore.CYAN}║{Style.RESET_ALL}     {Fore.GREEN}Ishan Bansal{Style.RESET_ALL}                              {Fore.CYAN}║{Style.RESET_ALL}
+    {Fore.CYAN}║{Style.RESET_ALL}                                                              {Fore.CYAN}║{Style.RESET_ALL}
+    {Fore.CYAN}║{Style.RESET_ALL}  {Fore.YELLOW}🏫 School Name:{Style.RESET_ALL} {Fore.WHITE}St. Anselm's Pink City School{Style.RESET_ALL}              {Fore.CYAN}║{Style.RESET_ALL}
+    {Fore.CYAN}║{Style.RESET_ALL}                                                              {Fore.CYAN}║{Style.RESET_ALL}
+    {Fore.CYAN}║{Style.RESET_ALL}  {Fore.YELLOW}📅 Session:{Style.RESET_ALL} {Fore.WHITE}2021-22{Style.RESET_ALL}                                        {Fore.CYAN}║{Style.RESET_ALL}
+    {Fore.CYAN}║{Style.RESET_ALL}                                                              {Fore.CYAN}║{Style.RESET_ALL}
+    {Fore.CYAN}╚══════════════════════════════════════════════════════════════╝{Style.RESET_ALL}
+    """
+    
+    print(credits)
+    print()
+    input(f'{Fore.YELLOW}{Style.BRIGHT}Press Enter to continue...{Style.RESET_ALL}')
 
 def clear():
-    for x in range(5):
-               print()
+    """Clear screen"""
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 def read_csv_file():
+    """Read and display CSV file"""
     try:
-        ipl=pd.read_csv(csv_file,sep=",",header=0)
-        ipl.drop(ipl.columns[ipl.columns.str.contains('unnamed',case = False)],axis = 1, inplace = True)
-        print(ipl)
+        print_header("READING CSV FILE", 80)
+        print_info("Loading data from matchanalysis.csv...")
+        print()
+        
+        ipl = pd.read_csv(csv_file, sep=",", header=0)
+        ipl.drop(ipl.columns[ipl.columns.str.contains('unnamed', case=False)], axis=1, inplace=True)
+        
+        print_success(f"Successfully loaded {len(ipl)} records!")
+        print()
+        print_separator()
+        print()
+        
+        # Display with better formatting
+        pd.set_option('display.max_columns', None)
+        pd.set_option('display.width', None)
+        pd.set_option('display.max_colwidth', 30)
+        print(ipl.to_string())
+        
+        print()
+        print_separator()
+        print_success(f"Total Records: {len(ipl)} | Total Columns: {len(ipl.columns)}")
+        
     except FileNotFoundError:
-        print(f"Error: File '{csv_file}' not found!")
+        print_error(f"File '{csv_file}' not found!")
     except Exception as e:
-        print(f"Error reading CSV file: {e}")
+        print_error(f"Error reading CSV file: {e}")
 
 def clean_dataframe(df):
     """Helper function to clean unnamed columns from dataframe"""
     df = df.copy()
-    df.drop(df.columns[df.columns.str.contains('unnamed',case = False)],axis = 1, inplace = True)
+    df.drop(df.columns[df.columns.str.contains('unnamed', case=False)], axis=1, inplace=True)
     return df
 
 def validate_year(year):
     """Helper function to validate year input"""
     return 2008 <= year <= 2019
-        
+
 def data_analysis_menu():
+    """Main data analysis menu"""
     # Load CSV once at the start
     try:
+        print_info("Loading data...")
         ipl = pd.read_csv(csv_file, sep=",", header=0)
         df = clean_dataframe(pd.DataFrame(ipl))
+        # Convert numeric columns to proper types
+        numeric_cols = ['season', 'win_by_runs', 'win_by_wickets', 'dl_applied']
+        for col in numeric_cols:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+        print_success("Data loaded successfully!")
     except FileNotFoundError:
-        print(f"Error: File '{csv_file}' not found!")
+        print_error(f"File '{csv_file}' not found!")
         return
     except Exception as e:
-        print(f"Error loading CSV file: {e}")
+        print_error(f"Error loading CSV file: {e}")
         return
     
     while True:
         clear()
-        print("\n\n\t\t\t\t\t\t\t________DATA ANALYSIS MENU________\t\t\t\t\t\t\t\n\n")
-        print(" CHOICES ")
-        print("1. WHOLE DATAFRAME\n")
-
-        print('2. DISPLAY COLUMNS\n')
+        print_header("📊 DATA ANALYSIS MENU 📊", 80)
+        print()
         
-        print('3. DISPLAY TOP ROWS\n')
+        menu_items = [
+            ("1", "📋 WHOLE DATAFRAME", Fore.CYAN),
+            ("2", "📑 DISPLAY COLUMNS", Fore.CYAN),
+            ("3", "⬆️  DISPLAY TOP ROWS", Fore.CYAN),
+            ("4", "⬇️  DISPLAY BOTTOM ROWS", Fore.CYAN),
+            ("5", "🔍 DISPLAY SPECIFIC COLUMN", Fore.CYAN),
+            ("6", "➕ ADD A NEW RECORD", Fore.GREEN),
+            ("7", "📝 ADD A NEW COLUMN", Fore.GREEN),
+            ("8", "🗑️  DELETE A COLUMN", Fore.RED),
+            ("9", "❌ DELETE A RECORD", Fore.RED),
+            ("10", "📅 TOTAL MATCHES IN A SEASON", Fore.YELLOW),
+            ("11", "🏆 WINNER OF THE SEASON", Fore.YELLOW),
+            ("12", "⭐ BEST PLAYER OF THE MATCH", Fore.YELLOW),
+            ("13", "🏃 MATCH WIN BY MAXIMUM RUNS", Fore.MAGENTA),
+            ("14", "🏃 MATCHES WIN BY MINIMUM RUNS", Fore.MAGENTA),
+            ("15", "🎯 MATCH WIN BY MAXIMUM WICKETS", Fore.MAGENTA),
+            ("16", "🎯 MATCHES WIN BY MINIMUM WICKETS", Fore.MAGENTA),
+            ("17", "📊 MATCHES WON BY EACH TEAM", Fore.BLUE),
+            ("18", "🪙 TOSS WINS BY EACH TEAM", Fore.BLUE),
+            ("19", "📈 DATA SUMMARY", Fore.CYAN),
+            ("20", "🚪 EXIT (To Main Menu)", Fore.RED),
+        ]
         
-        print('4. DISPLAY BOTTOM ROWS\n')
+        for num, item, color in menu_items:
+            print_colored(f"  {num:>3}. {item}", color)
         
-        print('5. DISPLAY SPECIFIC COLUMN\n')
-        
-        print('6. ADD A NEW RECORD\n')
-        
-        print('7. ADD A NEW COLUMN\n')
-        
-        print('8. DELETE A COLUMN\n')
-        
-        print('9. DELETE A RECORD\n')
-        
-        print("10. TOTAL MATCHES IN A SEASON\n")
-        
-        print("11. WINNER OF THE SEASON\n")
-        
-        print("12. BEST PLAYER OF THE MATCH\n")
-
-        print("13. MATCH WIN BY MAXIMUM RUNS\n")
-        
-        print("14. MATCHES WIN BY MINIMUM RUN IN THE SEASON\n")
-
-        print("15. MATCH WIN BY MAXIMUM WICKETS\n")
-        
-        print("16. MATCHES WIN BY MINIMUM WICKET IN THE SEASON\n")
-        
-        print("17. NO. OF MATCHES WON BY EACH TEAM IN THE SEASON\n")
-        
-        print("18. NO. OF TIMES EACH TEAM WON THE TOSS\n")
-        
-        print("19. DATA SUMMARY\n")
-        
-        print("20. EXIT(To Main menu)\n")
+        print()
+        print_separator()
         
         try:
-            choice = int(input("Enter Choice(1-20): "))
+            choice = int(input(f"{Fore.YELLOW}{Style.BRIGHT}Enter Choice (1-20): {Style.RESET_ALL}"))
         except ValueError:
-            print("INVALID CHOICE - Please enter a number")
-            wait = input('\nPress Enter to continue.....')
+            print_error("INVALID CHOICE - Please enter a number")
+            input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
             continue
             
         if choice == 1:
-            print("\n\nWHOLE DATAFRAME \n:")
+            print_header("WHOLE DATAFRAME", 80)
             df = clean_dataframe(df)
-            print(df)
-            wait = input('\nPress Enter to continue.....')
+            pd.set_option('display.max_rows', 50)
+            print(df.to_string())
+            print()
+            print_success(f"Displaying {len(df)} records")
+            input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
 
         elif choice == 2:
-            print(df.columns.tolist())
-            wait = input('\n\n\n Press any key to continuee.....')
+            print_header("DATAFRAME COLUMNS", 80)
+            columns = df.columns.tolist()
+            print()
+            for i, col in enumerate(columns, 1):
+                print_colored(f"  {i:>2}. {col}", Fore.CYAN)
+            print()
+            print_success(f"Total Columns: {len(columns)}")
+            input(f'\n{Fore.YELLOW}Press any key to continue...{Style.RESET_ALL}')
 
         elif choice == 3:
             try:
-                num_rows = int(input('Enter Total rows you want to show :'))
+                num_rows = int(input(f'{Fore.CYAN}Enter Total rows you want to show: {Style.RESET_ALL}'))
                 df = clean_dataframe(df)
-                print(df.head(num_rows))
+                print_header(f"TOP {num_rows} ROWS", 80)
+                print()
+                print(df.head(num_rows).to_string())
+                print()
             except ValueError:
-                print("Invalid input! Please enter a number.")
-            wait = input('\n\n\n Press any key to continuee.....')
+                print_error("Invalid input! Please enter a number.")
+            input(f'\n{Fore.YELLOW}Press any key to continue...{Style.RESET_ALL}')
                 
         elif choice == 4:
             try:
-                num_rows = int(input('Enter Total rows you want to show :'))
+                num_rows = int(input(f'{Fore.CYAN}Enter Total rows you want to show: {Style.RESET_ALL}'))
                 df = clean_dataframe(df)
-                print(df.tail(num_rows))
+                print_header(f"BOTTOM {num_rows} ROWS", 80)
+                print()
+                print(df.tail(num_rows).to_string())
+                print()
             except ValueError:
-                print("Invalid input! Please enter a number.")
-            wait = input('\n\n\n Press any key to continuee.....')
+                print_error("Invalid input! Please enter a number.")
+            input(f'\n{Fore.YELLOW}Press any key to continue...{Style.RESET_ALL}')
                 
         elif choice == 5:
-            print(df.columns.tolist())
-            col_name = input('Enter Column Name that You want to print : ')
+            print_header("DISPLAY SPECIFIC COLUMN", 80)
+            print()
+            print_colored("Available Columns:", Fore.YELLOW, Style.BRIGHT)
+            for i, col in enumerate(df.columns.tolist(), 1):
+                print_colored(f"  {i:>2}. {col}", Fore.CYAN)
+            print()
+            col_name = input(f'{Fore.CYAN}Enter Column Name: {Style.RESET_ALL}')
             if col_name in df.columns:
-                print(df[col_name])
+                print()
+                print_separator()
+                print_colored(f"Column: {col_name}", Fore.YELLOW, Style.BRIGHT)
+                print_separator()
+                print(df[col_name].to_string())
+                print()
             else:
-                print(f"Column '{col_name}' not found!")
-            wait = input('\n\n\n Press any key to continuee.....')
+                print_error(f"Column '{col_name}' not found!")
+            input(f'\n{Fore.YELLOW}Press any key to continue...{Style.RESET_ALL}')
                 
         elif choice == 6:
+            print_header("ADD NEW RECORD", 80)
             try:
-                match_id = input('Enter Match ID :')
-                season = input('Enter IPL season :')
-                city = input('Enter City Name :')
-                date = input('Enter Match date :')
-                team1 = input('Enter Team 1 Name  :')
-                team2 = input('Enter Team 2 Name :')
-                toss_winner = input('Enter Toss Winner :')
-                toss_decision = input('Enter Toss Decision :')
-                result = input('Enter Result (Normal /tie/ DL ) :')
-                dl_applied = input('Enter Duckwoth Lewis Method applied (0 for No, 1 for Yes ) :) :')
-                winner = input('Enter Winner Team :')
-                win_by_runs = input('Enter Win By runs :')
-                win_by_wickets = input('Enter Win By Wickets :')
-                player_of_match = input('Enter Man of the Match Player :')
-                venue = input('Enter venue : ')
-                data = {'id': match_id, 'season': season, 'city': city,'date': date, 'team1': team1, 'team2': team2, 
-                       'toss_winner': toss_winner,'toss_decision': toss_decision,'result': result,'dl_applied': dl_applied,
-                       'winner': winner,'win_by_runs': win_by_runs,'win_by_wickets': win_by_wickets,
-                       'player_of_match': player_of_match,'venue': venue}
+                print_info("Enter match details:")
+                print()
+                match_id = input(f'{Fore.CYAN}Match ID: {Style.RESET_ALL}')
+                season = input(f'{Fore.CYAN}IPL Season: {Style.RESET_ALL}')
+                city = input(f'{Fore.CYAN}City Name: {Style.RESET_ALL}')
+                date = input(f'{Fore.CYAN}Match Date: {Style.RESET_ALL}')
+                team1 = input(f'{Fore.CYAN}Team 1 Name: {Style.RESET_ALL}')
+                team2 = input(f'{Fore.CYAN}Team 2 Name: {Style.RESET_ALL}')
+                toss_winner = input(f'{Fore.CYAN}Toss Winner: {Style.RESET_ALL}')
+                toss_decision = input(f'{Fore.CYAN}Toss Decision: {Style.RESET_ALL}')
+                result = input(f'{Fore.CYAN}Result (Normal/tie/DL): {Style.RESET_ALL}')
+                dl_applied = input(f'{Fore.CYAN}DL Applied (0/1): {Style.RESET_ALL}')
+                winner = input(f'{Fore.CYAN}Winner Team: {Style.RESET_ALL}')
+                win_by_runs = input(f'{Fore.CYAN}Win By Runs: {Style.RESET_ALL}')
+                win_by_wickets = input(f'{Fore.CYAN}Win By Wickets: {Style.RESET_ALL}')
+                player_of_match = input(f'{Fore.CYAN}Player of Match: {Style.RESET_ALL}')
+                venue = input(f'{Fore.CYAN}Venue: {Style.RESET_ALL}')
+                
+                data = {'id': match_id, 'season': season, 'city': city, 'date': date, 
+                       'team1': team1, 'team2': team2, 'toss_winner': toss_winner,
+                       'toss_decision': toss_decision, 'result': result, 'dl_applied': dl_applied,
+                       'winner': winner, 'win_by_runs': win_by_runs, 'win_by_wickets': win_by_wickets,
+                       'player_of_match': player_of_match, 'venue': venue}
                 new_row = pd.DataFrame([data])
                 df = pd.concat([df, new_row], ignore_index=True)
                 df = clean_dataframe(df)
-                print(df)
+                print()
+                print_success("Record added successfully!")
+                print()
+                print(df.tail(1).to_string())
             except Exception as e:
-                print(f"Error adding record: {e}")
-            wait = input('\n\n\n Press any key to continuee.....')
+                print_error(f"Error adding record: {e}")
+            input(f'\n{Fore.YELLOW}Press any key to continue...{Style.RESET_ALL}')
                 
         elif choice == 7:
-            col_name = input('Enter new column name :')
-            col_value = input('Enter default column value :')
+            print_header("ADD NEW COLUMN", 80)
+            col_name = input(f'{Fore.CYAN}Enter new column name: {Style.RESET_ALL}')
+            col_value = input(f'{Fore.CYAN}Enter default column value: {Style.RESET_ALL}')
             df[col_name] = col_value
             df = clean_dataframe(df)
-            print(df)
-            wait = input('\n\n\n Press any key to continuee.....')
+            print()
+            print_success(f"Column '{col_name}' added successfully!")
+            print()
+            print(df.head().to_string())
+            input(f'\n{Fore.YELLOW}Press any key to continue...{Style.RESET_ALL}')
 
         elif choice == 8:
-            col_name = input('Enter column Name to delete :')
+            print_header("DELETE COLUMN", 80)
+            print_colored("Available Columns:", Fore.YELLOW, Style.BRIGHT)
+            for i, col in enumerate(df.columns.tolist(), 1):
+                print_colored(f"  {i:>2}. {col}", Fore.CYAN)
+            print()
+            col_name = input(f'{Fore.CYAN}Enter column name to delete: {Style.RESET_ALL}')
             if col_name in df.columns:
                 df = df.drop(columns=[col_name])
                 df = clean_dataframe(df)
-                print(df)
+                print()
+                print_success(f"Column '{col_name}' deleted successfully!")
+                print()
+                print(df.head().to_string())
             else:
-                print(f"Column '{col_name}' not found!")
-            wait = input('\n\n\n Press any key to continuee.....')
+                print_error(f"Column '{col_name}' not found!")
+            input(f'\n{Fore.YELLOW}Press any key to continue...{Style.RESET_ALL}')
 
         elif choice == 9:
+            print_header("DELETE RECORD", 80)
             try:
-                index_no = int(input('Enter the Index Number that You want to delete :'))
+                print_info(f"Total records: {len(df)}")
+                index_no = int(input(f'{Fore.CYAN}Enter Index Number to delete (0-{len(df)-1}): {Style.RESET_ALL}'))
                 if 0 <= index_no < len(df):
+                    deleted_record = df.iloc[index_no]
                     df = df.drop(df.index[index_no])
                     df = clean_dataframe(df)
-                    print(df)
+                    print()
+                    print_success("Record deleted successfully!")
+                    print()
+                    print_colored("Deleted Record:", Fore.YELLOW, Style.BRIGHT)
+                    print(deleted_record.to_string())
                 else:
-                    print(f"Invalid index! Please enter a number between 0 and {len(df)-1}")
+                    print_error(f"Invalid index! Please enter a number between 0 and {len(df)-1}")
             except ValueError:
-                print("Invalid input! Please enter a number.")
-            wait = input('\n\n\n Press any key to continuee.....')
+                print_error("Invalid input! Please enter a number.")
+            input(f'\n{Fore.YELLOW}Press any key to continue...{Style.RESET_ALL}')
             
         elif choice == 10:
             try:
-                year = int(input("Enter Year you want to see(2008 - 2019):"))
+                year = int(input(f'{Fore.CYAN}Enter Year (2008-2019): {Style.RESET_ALL}'))
                 if validate_year(year):
                     dfseason = df[df['season'] == year]
                     matches = len(dfseason)
-                    print(f"Total number of matches in {year} is {matches}")
+                    print()
+                    print_header(f"SEASON {year} STATISTICS", 80)
+                    print()
+                    print_colored(f"📅 Season: {year}", Fore.YELLOW, Style.BRIGHT)
+                    print_colored(f"🏏 Total Matches: {matches}", Fore.GREEN, Style.BRIGHT)
+                    print()
                 else:
-                    print("Enter year between 2008 and 2019")
-            except ValueError:
-                print("Invalid input! Please enter a number.")
-            wait = input('\n\nPress Enter to continue.....')
+                    print_error("Enter year between 2008 and 2019")
+            except (ValueError, KeyError) as e:
+                print_error(f"Error: {e}")
+            input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
             
         elif choice == 11:
             try:
-                year = int(input("Enter Year you want to see(2008 - 2019):"))
+                year = int(input(f'{Fore.CYAN}Enter Year (2008-2019): {Style.RESET_ALL}'))
                 if validate_year(year):
                     dfseason = df[df['season'] == year]
                     winner_mode = dfseason['winner'].mode()
+                    print()
+                    print_header(f"SEASON {year} WINNER", 80)
+                    print()
                     if len(winner_mode) > 0:
-                        print(f"Winner of {year} is\n{winner_mode.iloc[0]}")
+                        print_colored(f"🏆 Winner of {year}: {winner_mode.iloc[0]}", Fore.GREEN, Style.BRIGHT)
                     else:
-                        print(f"No winner data found for {year}")
+                        print_warning(f"No winner data found for {year}")
                 else:
-                    print("Enter year between 2008 and 2019")
+                    print_error("Enter year between 2008 and 2019")
             except ValueError:
-                print("Invalid input! Please enter a number.")
-            wait = input('\n\nPress Enter to continue.....')
+                print_error("Invalid input! Please enter a number.")
+            input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
                 
         elif choice == 12:
             try:
-                year = int(input("Enter Year you want to see(2008 - 2019):"))
+                year = int(input(f'{Fore.CYAN}Enter Year (2008-2019): {Style.RESET_ALL}'))
                 if validate_year(year):
                     dfseason = df[df['season'] == year]
                     player_mode = dfseason['player_of_match'].mode()
+                    print()
+                    print_header(f"SEASON {year} BEST PLAYER", 80)
+                    print()
                     if len(player_mode) > 0:
-                        print(f"Best player of {year} is :\n{player_mode.iloc[0]}")
+                        print_colored(f"⭐ Best Player of {year}: {player_mode.iloc[0]}", Fore.YELLOW, Style.BRIGHT)
                     else:
-                        print(f"No player data found for {year}")
+                        print_warning(f"No player data found for {year}")
                 else:
-                    print("Enter year between 2008 and 2019")
+                    print_error("Enter year between 2008 and 2019")
             except ValueError:
-                print("Invalid input! Please enter a number.")
-            wait = input('\n\nPress Enter to continue.....')
+                print_error("Invalid input! Please enter a number.")
+            input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
 
         elif choice == 13:
             try:
-                year = int(input("Enter Year you want to see(2008 - 2019):"))
+                year = int(input(f'{Fore.CYAN}Enter Year (2008-2019): {Style.RESET_ALL}'))
                 if validate_year(year):
                     dfseason = df[df['season'] == year].copy()
                     dfseason = clean_dataframe(dfseason)
-                    # Filter matches won by runs (win_by_runs > 0)
                     runs_wins = dfseason[dfseason['win_by_runs'] > 0]
+                    print()
+                    print_header(f"MAXIMUM RUNS WIN - {year}", 80)
+                    print()
                     if len(runs_wins) > 0:
                         max_idx = runs_wins['win_by_runs'].idxmax()
-                        print(dfseason.loc[max_idx])
+                        match = dfseason.loc[max_idx]
+                        print_colored(f"🏆 Maximum Win by Runs: {match['win_by_runs']}", Fore.GREEN, Style.BRIGHT)
+                        print()
+                        print(match.to_string())
                     else:
-                        print(f"No matches won by runs found for {year}")
+                        print_warning(f"No matches won by runs found for {year}")
                 else:
-                    print("Enter year between 2008 and 2019")
+                    print_error("Enter year between 2008 and 2019")
             except (ValueError, KeyError) as e:
-                print(f"Error: {e}")
-            wait = input('\n\nPress Enter to continue.....')
+                print_error(f"Error: {e}")
+            input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
                 
         elif choice == 14:
             try:
-                year = int(input("Enter Year you want to see(2008 - 2019):"))
+                year = int(input(f'{Fore.CYAN}Enter Year (2008-2019): {Style.RESET_ALL}'))
                 if validate_year(year):
                     dfseason = df[df['season'] == year].copy()
                     dfseason = clean_dataframe(dfseason)
-                    # Filter matches won by runs (win_by_runs > 0)
                     runs_wins = dfseason[dfseason['win_by_runs'] > 0]
+                    print()
+                    print_header(f"MINIMUM RUNS WIN - {year}", 80)
+                    print()
                     if len(runs_wins) > 0:
                         min_idx = runs_wins['win_by_runs'].idxmin()
-                        print(dfseason.loc[min_idx])
+                        match = dfseason.loc[min_idx]
+                        print_colored(f"🏃 Minimum Win by Runs: {match['win_by_runs']}", Fore.YELLOW, Style.BRIGHT)
+                        print()
+                        print(match.to_string())
                     else:
-                        print(f"No matches won by runs found for {year}")
+                        print_warning(f"No matches won by runs found for {year}")
                 else:
-                    print("Enter year between 2008 and 2019")
+                    print_error("Enter year between 2008 and 2019")
             except (ValueError, KeyError) as e:
-                print(f"Error: {e}")
-            wait = input('\n\nPress Enter to continue.....')
+                print_error(f"Error: {e}")
+            input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
 
         elif choice == 15:
             try:
-                year = int(input("Enter Year you want to see(2008 - 2019):"))
+                year = int(input(f'{Fore.CYAN}Enter Year (2008-2019): {Style.RESET_ALL}'))
                 if validate_year(year):
                     dfseason = df[df['season'] == year].copy()
                     dfseason = clean_dataframe(dfseason)
-                    # Filter matches won by wickets (win_by_wickets > 0)
                     wickets_wins = dfseason[dfseason['win_by_wickets'] > 0]
+                    print()
+                    print_header(f"MAXIMUM WICKETS WIN - {year}", 80)
+                    print()
                     if len(wickets_wins) > 0:
                         max_idx = wickets_wins['win_by_wickets'].idxmax()
-                        print(dfseason.loc[max_idx])
+                        match = dfseason.loc[max_idx]
+                        print_colored(f"🎯 Maximum Win by Wickets: {match['win_by_wickets']}", Fore.GREEN, Style.BRIGHT)
+                        print()
+                        print(match.to_string())
                     else:
-                        print(f"No matches won by wickets found for {year}")
+                        print_warning(f"No matches won by wickets found for {year}")
                 else:
-                    print("Enter year between 2008 and 2019")
+                    print_error("Enter year between 2008 and 2019")
             except (ValueError, KeyError) as e:
-                print(f"Error: {e}")
-            wait = input('\n\nPress Enter to continue.....')
+                print_error(f"Error: {e}")
+            input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
             
         elif choice == 16:
             try:
-                year = int(input("Enter Year you want to see(2008 - 2019):"))
+                year = int(input(f'{Fore.CYAN}Enter Year (2008-2019): {Style.RESET_ALL}'))
                 if validate_year(year):
                     dfseason = df[df['season'] == year].copy()
                     dfseason = clean_dataframe(dfseason)
-                    # Filter matches won by wickets (win_by_wickets > 0)
                     wickets_wins = dfseason[dfseason['win_by_wickets'] > 0]
+                    print()
+                    print_header(f"MINIMUM WICKETS WIN - {year}", 80)
+                    print()
                     if len(wickets_wins) > 0:
                         min_idx = wickets_wins['win_by_wickets'].idxmin()
-                        print(dfseason.loc[min_idx])
+                        match = dfseason.loc[min_idx]
+                        print_colored(f"🎯 Minimum Win by Wickets: {match['win_by_wickets']}", Fore.YELLOW, Style.BRIGHT)
+                        print()
+                        print(match.to_string())
                     else:
-                        print(f"No matches won by wickets found for {year}")
+                        print_warning(f"No matches won by wickets found for {year}")
                 else:
-                    print("Enter year between 2008 and 2019")
+                    print_error("Enter year between 2008 and 2019")
             except (ValueError, KeyError) as e:
-                print(f"Error: {e}")
-            wait = input('\n\nPress Enter to continue.....')
+                print_error(f"Error: {e}")
+            input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
                 
         elif choice == 17:
             try:
-                year = int(input("Enter Year you want to see(2008 - 2019):"))
+                year = int(input(f'{Fore.CYAN}Enter Year (2008-2019): {Style.RESET_ALL}'))
                 if validate_year(year):
                     dfseason = df[df['season'] == year]
                     dfseason = clean_dataframe(dfseason)
-                    print(f"No. Of Matches Win by each team in {year} are\n{dfseason['winner'].value_counts()}")
+                    wins = dfseason['winner'].value_counts()
+                    print()
+                    print_header(f"MATCHES WON BY EACH TEAM - {year}", 80)
+                    print()
+                    for team, count in wins.items():
+                        print_colored(f"  {team:<40} {count:>3} wins", Fore.GREEN)
+                    print()
+                    print_success(f"Total Teams: {len(wins)}")
                 else:
-                    print("Enter year between 2008 and 2019")
+                    print_error("Enter year between 2008 and 2019")
             except ValueError:
-                print("Invalid input! Please enter a number.")
-            wait = input('\n\nPress Enter to continue.....')
+                print_error("Invalid input! Please enter a number.")
+            input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
                     
                 
         elif choice == 18:
             try:
-                year = int(input("Enter Year you want to see(2008 - 2019):"))
+                year = int(input(f'{Fore.CYAN}Enter Year (2008-2019): {Style.RESET_ALL}'))
                 if validate_year(year):
                     dfseason = df[df['season'] == year]
-                    print(f"No. Of toss Win by each team in {year}\n{dfseason['toss_winner'].value_counts()}")
+                    toss_wins = dfseason['toss_winner'].value_counts()
+                    print()
+                    print_header(f"TOSS WINS BY EACH TEAM - {year}", 80)
+                    print()
+                    for team, count in toss_wins.items():
+                        print_colored(f"  {team:<40} {count:>3} toss wins", Fore.CYAN)
+                    print()
+                    print_success(f"Total Teams: {len(toss_wins)}")
                 else:
-                    print("Enter year between 2008 and 2019")
+                    print_error("Enter year between 2008 and 2019")
             except ValueError:
-                print("Invalid input! Please enter a number.")
-            wait = input('\n\nPress Enter to continue.....')
+                print_error("Invalid input! Please enter a number.")
+            input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
 
                  
         elif choice == 19:
-            print(df.describe())
-            wait = input('Press Enter to continue.....')
+            print_header("DATA SUMMARY", 80)
+            print()
+            print(df.describe().to_string())
+            print()
+            print_separator()
+            print_colored(f"Total Records: {len(df)}", Fore.GREEN, Style.BRIGHT)
+            print_colored(f"Total Columns: {len(df.columns)}", Fore.GREEN, Style.BRIGHT)
+            input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
                 
         elif choice == 20:
             break
         else:
-            print("INVALID CHOICE")
-            wait = input('\nPress Enter to continue.....')
-                
+            print_error("INVALID CHOICE")
+            input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
                 
 def graph():
+    """Graph visualization menu"""
     clear()
     try:
-        df = pd.read_csv(csv_file)
+        print_info("Loading data for visualization...")
+        ipl = pd.read_csv(csv_file, sep=",", header=0)
+        df = clean_dataframe(pd.DataFrame(ipl))
         df = clean_dataframe(df)
+        # Convert numeric columns to proper types
+        numeric_cols = ['season', 'win_by_runs', 'win_by_wickets', 'dl_applied']
+        for col in numeric_cols:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+        print_success("Data loaded successfully!")
     except FileNotFoundError:
-        print(f"Error: File '{csv_file}' not found!")
+        print_error(f"File '{csv_file}' not found!")
         return
     except Exception as e:
-        print(f"Error loading CSV file: {e}")
+        print_error(f"Error loading CSV file: {e}")
         return
         
     while True:
         clear()
-        print('\n\t\t\t\tGRAPH MENU ')
-        print('_'*80)
-        print('\n1. Season wise Matches - Line Graph')
-        print('\n2. Season wise Matches - Bar Graph')
-        print('\n3. Season wise Matches - Horizontal Bar Graph')
-        print('\n4. Most Successful Team - Bar Graph')
-        print('\n5. Match played by each Team - Line Graph')
-        print('\n6. Match played by each Team - Bar Graph')
-        print('\n7. No. of matches per venue - Line Graph')
-        print('\n8. No. of matches per venue - Bar Graph')
-        print('\n9. No. of matches per venue - Bar Horizontal Graph')
-        print('\n10. No. of toss win by each team - Line Graph')
-        print('\n11. No. of toss win by each team - Bar Graph')
-        print('\n12. No. of toss win by each team - Bar Horizontal Graph')
-        print('\n13. No. of times which Toss decision is taken - Bar Graph')
-        print('\n14. Match result - PIE CHART')
-        print('\n15. no. of player became player of the match- HISTOGRAM')
-        print('\n16.  Exit (Move to Main Menu)\n')
+        print_header("📈 GRAPH VISUALIZATION MENU 📈", 80)
+        print()
+        
+        graph_menu = [
+            ("1", "📊 Season wise Matches - Line Graph", Fore.CYAN),
+            ("2", "📊 Season wise Matches - Bar Graph", Fore.CYAN),
+            ("3", "📊 Season wise Matches - Horizontal Bar", Fore.CYAN),
+            ("4", "🏆 Most Successful Team - Bar Graph", Fore.GREEN),
+            ("5", "🏏 Match played by each Team - Line", Fore.YELLOW),
+            ("6", "🏏 Match played by each Team - Bar", Fore.YELLOW),
+            ("7", "🏟️  Matches per venue - Line Graph", Fore.MAGENTA),
+            ("8", "🏟️  Matches per venue - Bar Graph", Fore.MAGENTA),
+            ("9", "🏟️  Matches per venue - Horizontal Bar", Fore.MAGENTA),
+            ("10", "🪙 Toss win by each team - Line", Fore.BLUE),
+            ("11", "🪙 Toss win by each team - Bar", Fore.BLUE),
+            ("12", "🪙 Toss win by each team - Horizontal Bar", Fore.BLUE),
+            ("13", "🎲 Toss decision frequency - Bar Graph", Fore.CYAN),
+            ("14", "🥧 Match result - PIE CHART", Fore.RED),
+            ("15", "📊 Player of Match - HISTOGRAM", Fore.YELLOW),
+            ("16", "🚪 Exit (Move to Main Menu)", Fore.RED),
+        ]
+        
+        for num, item, color in graph_menu:
+            print_colored(f"  {num:>3}. {item}", color)
+        
+        print()
+        print_separator()
         
         try:
-            ch = int(input('Enter Your Choice(1-16):'))
+            ch = int(input(f'{Fore.YELLOW}{Style.BRIGHT}Enter Your Choice (1-16): {Style.RESET_ALL}'))
         except ValueError:
-            print("Invalid input! Please enter a number.")
-            wait = input("\n\nPress Enter to Continue......")
+            print_error("Invalid input! Please enter a number.")
+            input(f"\n{Fore.YELLOW}Press Enter to Continue...{Style.RESET_ALL}")
             continue
 
         try:
             if ch == 1:
-                season_counts = df['season'].value_counts().sort_index()
-                plt.figure(figsize=(10, 6))
-                plt.plot(season_counts.index, season_counts.values, marker='o')
-                plt.xlabel('Season')
-                plt.ylabel('Matches')
-                plt.title('Season wise Matches')
-                plt.grid(True)
-                plt.xticks(rotation=45)
-                plt.tight_layout()
-                plt.show()
+                    season_counts = df['season'].value_counts().sort_index()
+                    plt.figure(figsize=(12, 7), facecolor='#f0f0f0')
+                    plt.plot(season_counts.index, season_counts.values, marker='o', linewidth=3, 
+                            markersize=10, color='#2E86AB', markerfacecolor='#A23B72')
+                    plt.xlabel('Season', fontsize=12, fontweight='bold')
+                    plt.ylabel('Number of Matches', fontsize=12, fontweight='bold')
+                    plt.title('Season wise Matches - Line Graph', fontsize=14, fontweight='bold', pad=20)
+                    plt.grid(True, alpha=0.3, linestyle='--')
+                    plt.xticks(rotation=45)
+                    plt.tight_layout()
+                    plt.show()
 
             elif ch == 2:
-                season_counts = df['season'].value_counts().sort_index()
-                plt.figure(figsize=(10, 6))
-                plt.bar(season_counts.index, season_counts.values)
-                plt.xlabel('Season')
-                plt.ylabel('Matches')
-                plt.title('Season wise Matches')
-                plt.grid(True, axis='y')
-                plt.xticks(rotation=45)
-                plt.tight_layout()
-                plt.show()
-            
+                    season_counts = df['season'].value_counts().sort_index()
+                    plt.figure(figsize=(12, 7), facecolor='#f0f0f0')
+                    bars = plt.bar(season_counts.index, season_counts.values, color='#2E86AB', edgecolor='#1B4F72', linewidth=2)
+                    plt.xlabel('Season', fontsize=12, fontweight='bold')
+                    plt.ylabel('Number of Matches', fontsize=12, fontweight='bold')
+                    plt.title('Season wise Matches - Bar Graph', fontsize=14, fontweight='bold', pad=20)
+                    plt.grid(True, axis='y', alpha=0.3, linestyle='--')
+                    plt.xticks(rotation=45)
+                    for bar in bars:
+                        height = bar.get_height()
+                        plt.text(bar.get_x() + bar.get_width()/2., height, f'{int(height)}',
+                                ha='center', va='bottom', fontweight='bold')
+                    plt.tight_layout()
+                    plt.show()
+                
             elif ch == 3:
-                season_counts = df['season'].value_counts().sort_index()
-                plt.figure(figsize=(10, 6))
-                plt.barh(season_counts.index, season_counts.values)
-                plt.xlabel('Matches')
-                plt.ylabel('Season')
-                plt.title('Season wise Matches')
-                plt.grid(True, axis='x')
-                plt.tight_layout()
-                plt.show()
-           
+                    season_counts = df['season'].value_counts().sort_index()
+                    plt.figure(figsize=(10, 8), facecolor='#f0f0f0')
+                    bars = plt.barh(season_counts.index, season_counts.values, color='#A23B72', edgecolor='#6B1F3A', linewidth=2)
+                    plt.xlabel('Number of Matches', fontsize=12, fontweight='bold')
+                    plt.ylabel('Season', fontsize=12, fontweight='bold')
+                    plt.title('Season wise Matches - Horizontal Bar', fontsize=14, fontweight='bold', pad=20)
+                    plt.grid(True, axis='x', alpha=0.3, linestyle='--')
+                    for i, bar in enumerate(bars):
+                        width = bar.get_width()
+                        plt.text(width, bar.get_y() + bar.get_height()/2., f'{int(width)}',
+                                ha='left', va='center', fontweight='bold', fontsize=10)
+                    plt.tight_layout()
+                    plt.show()
+            
 
             elif ch == 4:
-                winner_counts = df['winner'].value_counts()
-                plt.figure(figsize=(10, 8))
-                plt.barh(winner_counts.index, winner_counts.values)
-                plt.xlabel('Matches Won')
-                plt.ylabel('Teams')
-                plt.title('Most Successful Team')
-                plt.grid(True, axis='x')
-                plt.tight_layout()
-                plt.show()
+                    winner_counts = df['winner'].value_counts()
+                    plt.figure(figsize=(12, 10), facecolor='#f0f0f0')
+                    bars = plt.barh(winner_counts.index, winner_counts.values, 
+                                color=plt.cm.viridis(np.linspace(0, 1, len(winner_counts))), 
+                                edgecolor='black', linewidth=1.5)
+                    plt.xlabel('Matches Won', fontsize=12, fontweight='bold')
+                    plt.ylabel('Teams', fontsize=12, fontweight='bold')
+                    plt.title('Most Successful Team', fontsize=14, fontweight='bold', pad=20)
+                    plt.grid(True, axis='x', alpha=0.3, linestyle='--')
+                    for i, bar in enumerate(bars):
+                        width = bar.get_width()
+                        plt.text(width, bar.get_y() + bar.get_height()/2., f'{int(width)}',
+                                ha='left', va='center', fontweight='bold', fontsize=9)
+                    plt.tight_layout()
+                    plt.show()
 
 
             elif ch == 5:
                 team1_counts = df['team1'].value_counts()
                 team2_counts = df['team2'].value_counts()
                 total_matches = (team1_counts + team2_counts).sort_values(ascending=False)
-                plt.figure(figsize=(12, 6))
-                total_matches.plot(kind='line', marker='o')
-                plt.title('Match played by each team')
-                plt.xlabel('Teams')
-                plt.ylabel('Matches')
-                plt.xticks(rotation=45)
-                plt.grid(True)
+                plt.figure(figsize=(14, 7), facecolor='#f0f0f0')
+                plt.plot(range(len(total_matches)), total_matches.values, marker='o', 
+                        linewidth=3, markersize=8, color='#F18F01')
+                plt.xticks(range(len(total_matches)), total_matches.index, rotation=45, ha='right')
+                plt.title('Match played by each team - Line Graph', fontsize=14, fontweight='bold', pad=20)
+                plt.xlabel('Teams', fontsize=12, fontweight='bold')
+                plt.ylabel('Number of Matches', fontsize=12, fontweight='bold')
+                plt.grid(True, alpha=0.3, linestyle='--')
                 plt.tight_layout()
                 plt.show()
 
@@ -485,154 +745,198 @@ def graph():
                 team1_counts = df['team1'].value_counts()
                 team2_counts = df['team2'].value_counts()
                 total_matches = (team1_counts + team2_counts).sort_values(ascending=False)
-                plt.figure(figsize=(10, 8))
-                total_matches.plot(kind='barh')
-                plt.title('Match played by each team')
-                plt.xlabel('Matches')
-                plt.ylabel('Teams')
+                plt.figure(figsize=(12, 10), facecolor='#f0f0f0')
+                bars = total_matches.plot(kind='barh', color=plt.cm.plasma(np.linspace(0, 1, len(total_matches))), 
+                                            edgecolor='black', linewidth=1.5)
+                plt.title('Match played by each team - Bar Graph', fontsize=14, fontweight='bold', pad=20)
+                plt.xlabel('Number of Matches', fontsize=12, fontweight='bold')
+                plt.ylabel('Teams', fontsize=12, fontweight='bold')
+                plt.grid(True, axis='x', alpha=0.3, linestyle='--')
                 plt.tight_layout()
                 plt.show()
 
             elif ch == 7:
-                venue_counts = df['venue'].value_counts()
-                plt.figure(figsize=(12, 6))
-                plt.plot(range(len(venue_counts)), venue_counts.values, marker='o')
-                plt.xticks(range(len(venue_counts)), venue_counts.index, rotation=90)
-                plt.xlabel('Venue')
-                plt.ylabel('Matches')
-                plt.title('No. of matches per venue')
-                plt.grid(True)
-                plt.tight_layout()
-                plt.show()
+                    venue_counts = df['venue'].value_counts()
+                    plt.figure(figsize=(14, 7), facecolor='#f0f0f0')
+                    plt.plot(range(len(venue_counts)), venue_counts.values, marker='o', 
+                            linewidth=2, markersize=6, color='#C73E1D')
+                    plt.xticks(range(len(venue_counts)), venue_counts.index, rotation=90, ha='center')
+                    plt.xlabel('Venue', fontsize=12, fontweight='bold')
+                    plt.ylabel('Number of Matches', fontsize=12, fontweight='bold')
+                    plt.title('No. of matches per venue - Line Graph', fontsize=14, fontweight='bold', pad=20)
+                    plt.grid(True, alpha=0.3, linestyle='--')
+                    plt.tight_layout()
+                    plt.show()
 
             elif ch == 8:
-                venue_counts = df['venue'].value_counts()
-                plt.figure(figsize=(12, 6))
-                plt.bar(range(len(venue_counts)), venue_counts.values)
-                plt.xticks(range(len(venue_counts)), venue_counts.index, rotation=90)
-                plt.xlabel('Venue')
-                plt.ylabel('Matches')
-                plt.title('No. of matches per venue')
-                plt.grid(True, axis='y')
-                plt.tight_layout()
-                plt.show()
+                    venue_counts = df['venue'].value_counts()
+                    plt.figure(figsize=(14, 7), facecolor='#f0f0f0')
+                    bars = plt.bar(range(len(venue_counts)), venue_counts.values, 
+                                color=plt.cm.Set3(np.linspace(0, 1, len(venue_counts))),
+                                edgecolor='black', linewidth=1)
+                    plt.xticks(range(len(venue_counts)), venue_counts.index, rotation=90, ha='center')
+                    plt.xlabel('Venue', fontsize=12, fontweight='bold')
+                    plt.ylabel('Number of Matches', fontsize=12, fontweight='bold')
+                    plt.title('No. of matches per venue - Bar Graph', fontsize=14, fontweight='bold', pad=20)
+                    plt.grid(True, axis='y', alpha=0.3, linestyle='--')
+                    plt.tight_layout()
+                    plt.show()
 
             elif ch == 9:
-                venue_counts = df['venue'].value_counts()
-                plt.figure(figsize=(10, max(8, len(venue_counts) * 0.3)))
-                plt.barh(range(len(venue_counts)), venue_counts.values)
-                plt.yticks(range(len(venue_counts)), venue_counts.index)
-                plt.xlabel('Matches')
-                plt.ylabel('Venue')
-                plt.title('No. of matches per venue')
-                plt.grid(True, axis='x')
-                plt.tight_layout()
-                plt.show()
+                    venue_counts = df['venue'].value_counts()
+                    plt.figure(figsize=(12, max(10, len(venue_counts) * 0.4)), facecolor='#f0f0f0')
+                    bars = plt.barh(range(len(venue_counts)), venue_counts.values,
+                                color=plt.cm.tab20(np.linspace(0, 1, len(venue_counts))),
+                                edgecolor='black', linewidth=1)
+                    plt.yticks(range(len(venue_counts)), venue_counts.index)
+                    plt.xlabel('Number of Matches', fontsize=12, fontweight='bold')
+                    plt.ylabel('Venue', fontsize=12, fontweight='bold')
+                    plt.title('No. of matches per venue - Horizontal Bar', fontsize=14, fontweight='bold', pad=20)
+                    plt.grid(True, axis='x', alpha=0.3, linestyle='--')
+                    plt.tight_layout()
+                    plt.show()
 
             elif ch == 10:
-                toss_counts = df['toss_winner'].value_counts()
-                plt.figure(figsize=(12, 6))
-                plt.plot(range(len(toss_counts)), toss_counts.values, marker='o')
-                plt.xticks(range(len(toss_counts)), toss_counts.index, rotation=90)
-                plt.xlabel('Team')
-                plt.ylabel('Toss Wins')
-                plt.title('No. of Toss Win by each team')
-                plt.grid(True)
-                plt.tight_layout()
-                plt.show()
+                    toss_counts = df['toss_winner'].value_counts()
+                    plt.figure(figsize=(14, 7), facecolor='#f0f0f0')
+                    plt.plot(range(len(toss_counts)), toss_counts.values, marker='s', 
+                            linewidth=3, markersize=8, color='#06A77D')
+                    plt.xticks(range(len(toss_counts)), toss_counts.index, rotation=90, ha='center')
+                    plt.xlabel('Team', fontsize=12, fontweight='bold')
+                    plt.ylabel('Toss Wins', fontsize=12, fontweight='bold')
+                    plt.title('No. of Toss Win by each team - Line Graph', fontsize=14, fontweight='bold', pad=20)
+                    plt.grid(True, alpha=0.3, linestyle='--')
+                    plt.tight_layout()
+                    plt.show()
 
             elif ch == 11:
-                toss_counts = df['toss_winner'].value_counts()
-                plt.figure(figsize=(12, 6))
-                plt.bar(range(len(toss_counts)), toss_counts.values)
-                plt.xticks(range(len(toss_counts)), toss_counts.index, rotation=90)
-                plt.xlabel('Team')
-                plt.ylabel('Toss Wins')
-                plt.title('No. of Toss Win by each team')
-                plt.grid(True, axis='y')
-                plt.tight_layout()
-                plt.show()
+                    toss_counts = df['toss_winner'].value_counts()
+                    plt.figure(figsize=(14, 7), facecolor='#f0f0f0')
+                    bars = plt.bar(range(len(toss_counts)), toss_counts.values,
+                                color=plt.cm.coolwarm(np.linspace(0, 1, len(toss_counts))),
+                                edgecolor='black', linewidth=1.5)
+                    plt.xticks(range(len(toss_counts)), toss_counts.index, rotation=90, ha='center')
+                    plt.xlabel('Team', fontsize=12, fontweight='bold')
+                    plt.ylabel('Toss Wins', fontsize=12, fontweight='bold')
+                    plt.title('No. of Toss Win by each team - Bar Graph', fontsize=14, fontweight='bold', pad=20)
+                    plt.grid(True, axis='y', alpha=0.3, linestyle='--')
+                    for bar in bars:
+                        height = bar.get_height()
+                        plt.text(bar.get_x() + bar.get_width()/2., height, f'{int(height)}',
+                                ha='center', va='bottom', fontweight='bold', fontsize=9)
+                    plt.tight_layout()
+                    plt.show()
 
             elif ch == 12:
-                toss_counts = df['toss_winner'].value_counts()
-                plt.figure(figsize=(10, max(8, len(toss_counts) * 0.3)))
-                plt.barh(range(len(toss_counts)), toss_counts.values)
-                plt.yticks(range(len(toss_counts)), toss_counts.index)
-                plt.xlabel('Toss Wins')
-                plt.ylabel('Team')
-                plt.title('No. of Toss Win by each team')
-                plt.grid(True, axis='x')
-                plt.tight_layout()
-                plt.show()
+                    toss_counts = df['toss_winner'].value_counts()
+                    plt.figure(figsize=(12, max(10, len(toss_counts) * 0.4)), facecolor='#f0f0f0')
+                    bars = plt.barh(range(len(toss_counts)), toss_counts.values,
+                                color=plt.cm.RdYlGn(np.linspace(0, 1, len(toss_counts))),
+                                edgecolor='black', linewidth=1.5)
+                    plt.yticks(range(len(toss_counts)), toss_counts.index)
+                    plt.xlabel('Toss Wins', fontsize=12, fontweight='bold')
+                    plt.ylabel('Team', fontsize=12, fontweight='bold')
+                    plt.title('No. of Toss Win by each team - Horizontal Bar', fontsize=14, fontweight='bold', pad=20)
+                    plt.grid(True, axis='x', alpha=0.3, linestyle='--')
+                    plt.tight_layout()
+                    plt.show()
 
             elif ch == 13:
-                decision_counts = df['toss_decision'].value_counts()
-                plt.figure(figsize=(8, 6))
-                plt.bar(decision_counts.index, decision_counts.values)
-                plt.xlabel('Toss decision')
-                plt.ylabel('Matches')
-                plt.title('No. of times which toss decision is taken')
-                plt.grid(True, axis='y')
-                plt.tight_layout()
-                plt.show()
+                    decision_counts = df['toss_decision'].value_counts()
+                    plt.figure(figsize=(10, 7), facecolor='#f0f0f0')
+                    bars = plt.bar(decision_counts.index, decision_counts.values,
+                                color=['#FF6B6B', '#4ECDC4'], edgecolor='black', linewidth=2)
+                    plt.xlabel('Toss Decision', fontsize=12, fontweight='bold')
+                    plt.ylabel('Number of Matches', fontsize=12, fontweight='bold')
+                    plt.title('No. of times which toss decision is taken', fontsize=14, fontweight='bold', pad=20)
+                    plt.grid(True, axis='y', alpha=0.3, linestyle='--')
+                    for bar in bars:
+                        height = bar.get_height()
+                        plt.text(bar.get_x() + bar.get_width()/2., height, f'{int(height)}',
+                                ha='center', va='bottom', fontweight='bold', fontsize=12)
+                    plt.tight_layout()
+                    plt.show()
 
             elif ch == 14:
-                result_counts = df['result'].value_counts()
-                # Create explode array dynamically
-                explode = [0.1] * len(result_counts)
-                colors = ['blue', 'red', 'green', 'orange', 'purple'][:len(result_counts)]
-                plt.figure(figsize=(8, 8))
-                plt.pie(result_counts.values, labels=result_counts.index, autopct='%.2f%%', 
-                       explode=explode, colors=colors, startangle=90)
-                plt.title('Match Result')
-                plt.axis('equal')
-                plt.tight_layout()
-                plt.show()
+                    result_counts = df['result'].value_counts()
+                    explode = [0.05] * len(result_counts)
+                    colors = plt.cm.Pastel1(np.linspace(0, 1, len(result_counts)))
+                    plt.figure(figsize=(10, 10), facecolor='#f0f0f0')
+                    wedges, texts, autotexts = plt.pie(result_counts.values, labels=result_counts.index, 
+                                                    autopct='%1.1f%%', explode=explode, colors=colors,
+                                                    startangle=90, textprops={'fontsize': 12, 'fontweight': 'bold'})
+                    for autotext in autotexts:
+                        autotext.set_color('black')
+                        autotext.set_fontweight('bold')
+                    plt.title('Match Result Distribution - Pie Chart', fontsize=14, fontweight='bold', pad=20)
+                    plt.axis('equal')
+                    plt.tight_layout()
+                    plt.show()
 
 
             elif ch == 15:
-                player_counts = df['player_of_match'].value_counts()
-                plt.figure(figsize=(10, 6))
-                plt.hist(player_counts.values, bins=20, edgecolor='black')
-                plt.title('No. of times player became player of the match')
-                plt.xlabel('Number of Times')
-                plt.ylabel('Frequency (Number of Players)')
-                plt.grid(True, axis='y')
-                plt.tight_layout()
-                plt.show()
+                    player_counts = df['player_of_match'].value_counts()
+                    plt.figure(figsize=(12, 7), facecolor='#f0f0f0')
+                    n, bins, patches = plt.hist(player_counts.values, bins=20, edgecolor='black', 
+                                                linewidth=1.5, color='#9B59B6', alpha=0.7)
+                    plt.title('No. of times player became player of the match - Histogram', 
+                            fontsize=14, fontweight='bold', pad=20)
+                    plt.xlabel('Number of Times', fontsize=12, fontweight='bold')
+                    plt.ylabel('Frequency (Number of Players)', fontsize=12, fontweight='bold')
+                    plt.grid(True, axis='y', alpha=0.3, linestyle='--')
+                    plt.tight_layout()
+                    plt.show()
 
-                
             elif ch == 16:
+                clear()
+                print_header("THANK YOU FOR USING IPL DATA ANALYSIS", 80)
+                print()
+                print_colored("Program closed successfully!", Fore.GREEN, Style.BRIGHT)
+                print_colored("Made with ❤️  by Ishan Bansal & Utkarsh Jain", Fore.CYAN, Style.BRIGHT)
+                print()
                 break
+                
             else:
-                print("Enter Valid choice")
-                wait = input("\n\nPress Enter to Continue......")
+                    print_error("Enter Valid choice")
+                    input(f"\n{Fore.YELLOW}Press Enter to Continue...{Style.RESET_ALL}")
         except Exception as e:
-            print(f"Error creating graph: {e}")
-            wait = input("\n\nPress Enter to Continue......")
+            print_error(f"Error creating graph: {e}")
+            input(f"\n{Fore.YELLOW}Press Enter to Continue...{Style.RESET_ALL}")
     
 def main_menu():
+    """Main menu function"""
     introduction()
     made_by()
+    
     while True:
         clear()
-        print("\n\n\t\t\t\t\t\t\t-:-:-:-:-:-:-:-:-:-:-:MAIN MENU:-:-:-:-:-:-:-:-:-:-:-\t\t\t\t\t\t\t\n\n")
-        print("ALL CHOICES ")
+        print_header("🏏 MAIN MENU 🏏", 80)
         print()
-        print('1.  Read CSV File\n')
-        print('2.  Data Analysis Menu\n')
-        print('3.  Graph Menu\n')
-        print('4.  Exit\n')
+        
+        main_options = [
+            ("1", "📂 Read CSV File", Fore.CYAN),
+            ("2", "📊 Data Analysis Menu", Fore.GREEN),
+            ("3", "📈 Graph Visualization Menu", Fore.YELLOW),
+            ("4", "🚪 Exit Program", Fore.RED),
+        ]
+        
+        for num, item, color in main_options:
+            print_colored(f"  {num}. {item}", color, Style.BRIGHT)
+        
+        print()
+        print_separator("═", 80)
+        print()
+        
         try:
-            a = int(input('Enter your choice(1-4) :'))
+            a = int(input(f'{Fore.YELLOW}{Style.BRIGHT}Enter your choice (1-4): {Style.RESET_ALL}'))
         except ValueError:
-            print("Invalid input! Please enter a number.")
-            wait = input('\n\n Press Enter to continue....')
+            print_error("Invalid input! Please enter a number.")
+            input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
             continue
 
         if a == 1:
             read_csv_file()
-            wait = input('\n\n Press Enter to continue....')
+            input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
 
         elif a == 2:
             data_analysis_menu()
@@ -641,13 +945,19 @@ def main_menu():
             graph()
 
         elif a == 4:
-            print("PROGRAM CLOSED")
+            clear()
+            print_header("THANK YOU FOR USING IPL DATA ANALYSIS", 80)
+            print()
+            print_colored("Program closed successfully!", Fore.GREEN, Style.BRIGHT)
+            print()
+            print_colored("Made with ❤️  by Ishan Bansal", Fore.CYAN, Style.BRIGHT)
+            print()
             break
         else:
-            print("INVALID CHOICE")
-            wait = input('\n\n Press Enter to continue....')
+            print_error("INVALID CHOICE")
+            input(f'\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}')
                      
         clear()
 
-
-main_menu()
+if __name__ == "__main__":
+    main_menu()
